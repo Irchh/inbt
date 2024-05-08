@@ -8,9 +8,7 @@ pub use parser::*;
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::io::Read;
     use std::path::PathBuf;
-    use flate2::read::GzDecoder;
     use super::*;
 
     fn parse_file(file: &str) -> NbtTag {
@@ -18,11 +16,8 @@ mod tests {
         test_file.push("test_files/".to_string() + file);
         let test_compressed = fs::read(test_file).expect("Failed to open test file");
 
-        let mut decompresser = GzDecoder::new(test_compressed.as_slice());
-        let mut test_data = vec![];
-        let _ = decompresser.read_to_end(&mut test_data);
+        let tree = nbt_parser::parse_gzip(test_compressed.clone()).unwrap_or_else(|_| nbt_parser::parse_zlib(test_compressed).expect("Could not determine compression format"));
 
-        let tree = nbt_parser::parse_binary(test_data);
         eprintln!("{file} tree: {:?}", tree);
         tree
     }

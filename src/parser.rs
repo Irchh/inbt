@@ -5,7 +5,25 @@ use crate::parse_error::ParseError;
 use crate::types::NbtTag;
 
 pub mod nbt_parser {
+    use std::io;
+    use std::io::Read;
+    use flate2::read::{GzDecoder, ZlibDecoder};
     use super::*;
+
+    pub fn parse_gzip(compressed: Vec<u8>) -> io::Result<NbtTag> {
+        let mut decompresser = GzDecoder::new(compressed.as_slice());
+        let mut data = vec![];
+        let _ = decompresser.read_to_end(&mut data)?;
+        Ok(parse_binary(data))
+    }
+
+    pub fn parse_zlib(compressed: Vec<u8>) -> io::Result<NbtTag> {
+        let mut decompresser = ZlibDecoder::new(compressed.as_slice());
+        let mut data = vec![];
+        let _ = decompresser.read_to_end(&mut data)?;
+        Ok(parse_binary(data))
+    }
+
     pub fn parse_binary(data_vec: Vec<u8>) -> NbtTag {
         let mut data = data_vec.iter().peekable();
         parse_next(&mut data).unwrap()
