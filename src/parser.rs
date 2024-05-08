@@ -4,7 +4,7 @@ use std::slice::Iter;
 use crate::parse_error::ParseError;
 use crate::types::NbtTag;
 
-mod nbt_parser {
+pub mod nbt_parser {
     use super::*;
     pub fn parse_binary(data_vec: Vec<u8>) -> NbtTag {
         let mut data = data_vec.iter().peekable();
