@@ -7,4 +7,6 @@ pub enum ParseError {
     StringUtf8Error(#[from] FromUtf8Error),
     #[error("Hit end of data")]
     EndOfData,
+    #[error("Unknown NBT type: {0}")]
+    UnknownNBT(i8),
 }
