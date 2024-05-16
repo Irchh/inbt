@@ -30,3 +30,45 @@ pub enum NbtTag {
     /// Vector of 64-bit signed integers
     LongArray(String, Vec<i64>),
 }
+
+impl NbtTag {
+    pub fn get<S: Into<String> + Clone>(&self, name: S) -> Option<NbtTag> {
+        match self {
+            NbtTag::Compound(_, tags) => {
+                for tag in tags {
+                    if tag.get_name() == name.clone().into() {
+                        return Some(tag.clone());
+                    }
+                }
+                None
+            }
+            _ => None
+        }
+    }
+
+    pub fn get_int<S: Into<String> + Clone>(&self, name: S) -> Option<i32> {
+        if let NbtTag::Int(_, value) = self.get(name)? {
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_name(&self) -> String {
+        match self {
+            NbtTag::End => "".to_string(),
+            NbtTag::Byte(name, _) => name.clone(),
+            NbtTag::Short(name, _) => name.clone(),
+            NbtTag::Int(name, _) => name.clone(),
+            NbtTag::Long(name, _) => name.clone(),
+            NbtTag::Float(name, _) => name.clone(),
+            NbtTag::Double(name, _) => name.clone(),
+            NbtTag::ByteArray(name, _) => name.clone(),
+            NbtTag::String(name, _) => name.clone(),
+            NbtTag::List(name, _) => name.clone(),
+            NbtTag::Compound(name, _) => name.clone(),
+            NbtTag::IntArray(name, _) => name.clone(),
+            NbtTag::LongArray(name, _) => name.clone(),
+        }
+    }
+}
