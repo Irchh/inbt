@@ -123,7 +123,7 @@ pub mod nbt_parser {
                 7 => NbtTag::ByteArray("".to_string(), next_byte_arr(iterable)?),
                 8 => NbtTag::String("".to_string(), next_string(iterable)?),
                 9 => NbtTag::List("".to_string(), next_list(iterable)?),
-                10 => NbtTag::List("".to_string(), next_compound(iterable)?),
+                10 => NbtTag::Compound("".to_string(), next_compound(iterable)?),
                 11 => NbtTag::IntArray("".to_string(), next_int_arr(iterable)?),
                 12 => NbtTag::LongArray("".to_string(), next_long_arr(iterable)?),
                 _ => Err(NbtParseError::UnknownNBT(tag_id))?,
