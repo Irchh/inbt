@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::iter::Peekable;
 use std::slice::Iter;
-use crate::parse_error::ParseError;
+use crate::parse_error::NbtParseError;
 use crate::types::NbtTag;
 
 pub mod nbt_parser {
@@ -29,7 +29,7 @@ pub mod nbt_parser {
         parse_next(&mut data).unwrap()
     }
 
-    fn parse_next(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    fn parse_next(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         match next_byte(iterable)? {
             0 => parse_end(iterable),
             1 => parse_byte(iterable),
@@ -44,71 +44,71 @@ pub mod nbt_parser {
             10 => parse_compound(iterable),
             11 => parse_int_array(iterable),
             12 => parse_long_array(iterable),
-            id => Err(ParseError::UnknownNBT(id)),
+            id => Err(NbtParseError::UnknownNBT(id)),
         }
     }
 
-    fn parse_end(_: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    fn parse_end(_: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         Ok(NbtTag::End)
     }
 
-    fn next(iterable: &mut Peekable<Iter<u8>>) -> Result<u8, ParseError> {
-        iterable.next().map(|n| *n).ok_or(ParseError::EndOfData)
+    fn next(iterable: &mut Peekable<Iter<u8>>) -> Result<u8, NbtParseError> {
+        iterable.next().map(|n| *n).ok_or(NbtParseError::EndOfData)
     }
 
-    fn next_byte(iterable: &mut Peekable<Iter<u8>>) -> Result<i8, ParseError> {
+    fn next_byte(iterable: &mut Peekable<Iter<u8>>) -> Result<i8, NbtParseError> {
         Ok(i8::from_be_bytes([next(iterable)?]))
     }
 
-    fn next_short(iterable: &mut Peekable<Iter<u8>>) -> Result<i16, ParseError> {
+    fn next_short(iterable: &mut Peekable<Iter<u8>>) -> Result<i16, NbtParseError> {
         Ok(i16::from_be_bytes([next(iterable)?, next(iterable)?]))
     }
 
-    fn next_int(iterable: &mut Peekable<Iter<u8>>) -> Result<i32, ParseError> {
+    fn next_int(iterable: &mut Peekable<Iter<u8>>) -> Result<i32, NbtParseError> {
         Ok(i32::from_be_bytes([
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?
         ]))
     }
 
-    fn next_long(iterable: &mut Peekable<Iter<u8>>) -> Result<i64, ParseError> {
+    fn next_long(iterable: &mut Peekable<Iter<u8>>) -> Result<i64, NbtParseError> {
         Ok(i64::from_be_bytes([
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?,
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?
         ]))
     }
 
-    fn next_float(iterable: &mut Peekable<Iter<u8>>) -> Result<f32, ParseError> {
+    fn next_float(iterable: &mut Peekable<Iter<u8>>) -> Result<f32, NbtParseError> {
         Ok(f32::from_be_bytes([
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?
         ]))
     }
 
-    fn next_double(iterable: &mut Peekable<Iter<u8>>) -> Result<f64, ParseError> {
+    fn next_double(iterable: &mut Peekable<Iter<u8>>) -> Result<f64, NbtParseError> {
         Ok(f64::from_be_bytes([
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?,
             next(iterable)?, next(iterable)?, next(iterable)?, next(iterable)?
         ]))
     }
 
-    fn next_byte_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i8>, ParseError> {
+    fn next_byte_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i8>, NbtParseError> {
         let size = next_int(iterable)?;
         let arr = iterable.take(size as usize).map(|n| *n as i8).collect::<Vec<i8>>();
         if arr.len() < size as usize {
-            return Err(ParseError::EndOfData);
+            return Err(NbtParseError::EndOfData);
         }
         Ok(arr)
     }
 
-    fn next_string(iterable: &mut Peekable<Iter<u8>>) -> Result<String, ParseError> {
+    fn next_string(iterable: &mut Peekable<Iter<u8>>) -> Result<String, NbtParseError> {
         let size = next_short(iterable)?;
         let name = String::from_utf8(iterable.take(size as usize).map(|n| *n).collect::<Vec<u8>>())?;
         if name.as_bytes().len() < size as usize {
-            return Err(ParseError::EndOfData);
+            return Err(NbtParseError::EndOfData);
         }
         Ok(name)
     }
 
-    fn next_list(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<NbtTag>, ParseError> {
+    fn next_list(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<NbtTag>, NbtParseError> {
         let tag_id = next_byte(iterable)?;
         let size = next_int(iterable)?;
         let mut vec = vec![];
@@ -126,14 +126,14 @@ pub mod nbt_parser {
                 10 => NbtTag::List("".to_string(), next_compound(iterable)?),
                 11 => NbtTag::IntArray("".to_string(), next_int_arr(iterable)?),
                 12 => NbtTag::LongArray("".to_string(), next_long_arr(iterable)?),
-                _ => Err(ParseError::UnknownNBT(tag_id))?,
+                _ => Err(NbtParseError::UnknownNBT(tag_id))?,
             };
             vec.push(value);
         }
         Ok(vec)
     }
 
-    fn next_compound(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<NbtTag>, ParseError> {
+    fn next_compound(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<NbtTag>, NbtParseError> {
         let mut vec = vec![];
         loop {
             let next = parse_next(iterable)?;
@@ -145,7 +145,7 @@ pub mod nbt_parser {
         Ok(vec)
     }
 
-    fn next_int_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i32>, ParseError> {
+    fn next_int_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i32>, NbtParseError> {
         let size = next_int(iterable)?;
         let mut vec = vec![];
         for _ in 0..size {
@@ -154,7 +154,7 @@ pub mod nbt_parser {
         Ok(vec)
     }
 
-    fn next_long_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i64>, ParseError> {
+    fn next_long_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<Vec<i64>, NbtParseError> {
         let size = next_int(iterable)?;
         let mut vec = vec![];
         for _ in 0..size {
@@ -163,66 +163,66 @@ pub mod nbt_parser {
         Ok(vec)
     }
 
-    pub(super) fn parse_byte(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_byte(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Byte(name, next_byte(iterable)?))
     }
 
-    pub(super) fn parse_short(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_short(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Short(name, next_short(iterable)?))
     }
 
-    pub(super) fn parse_int(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_int(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Int(name, next_int(iterable)?))
     }
 
-    pub(super) fn parse_long(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_long(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Long(name, next_long(iterable)?))
     }
 
-    pub(super) fn parse_float(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_float(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Float(name, next_float(iterable)?))
     }
 
-    pub(super) fn parse_double(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_double(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::Double(name, next_double(iterable)?))
     }
 
-    pub(super) fn parse_byte_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_byte_arr(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         Ok(NbtTag::ByteArray(name, next_byte_arr(iterable)?))
     }
 
-    pub(super) fn parse_string(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_string(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         let string = next_string(iterable)?;
         Ok(NbtTag::String(name, string))
     }
 
-    pub(super) fn parse_list(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_list(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         let vec = next_list(iterable)?;
         Ok(NbtTag::List(name, vec))
     }
 
-    pub(super) fn parse_compound(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_compound(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         let vec = next_compound(iterable)?;
         Ok(NbtTag::Compound(name, vec))
     }
 
-    pub(super) fn parse_int_array(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_int_array(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         let vec = next_int_arr(iterable)?;
         Ok(NbtTag::IntArray(name, vec))
     }
 
-    pub(super) fn parse_long_array(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, ParseError> {
+    pub(super) fn parse_long_array(iterable: &mut Peekable<Iter<u8>>) -> Result<NbtTag, NbtParseError> {
         let name = next_string(iterable)?;
         let vec = next_long_arr(iterable)?;
         Ok(NbtTag::LongArray(name, vec))
