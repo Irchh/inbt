@@ -1,3 +1,6 @@
+use crate::NbtParseError;
+use crate::NbtParseError::{NoSuchValue, TriedGettingFromNonCompound, WrongType};
+
 /// Enum type for all existing nbt types. Excluding End, each tag contains a name as a String
 /// and it's value.
 #[repr(u8)]
@@ -32,25 +35,143 @@ pub enum NbtTag {
 }
 
 impl NbtTag {
-    pub fn get<S: Into<String> + Clone>(&self, name: S) -> Option<NbtTag> {
+    pub fn type_name(&self) -> String {
+        match self {
+            NbtTag::End => "end",
+            NbtTag::Byte(_, _) => "byte",
+            NbtTag::Short(_, _) => "short",
+            NbtTag::Int(_, _) => "int",
+            NbtTag::Long(_, _) => "long",
+            NbtTag::Float(_, _) => "float",
+            NbtTag::Double(_, _) => "double",
+            NbtTag::ByteArray(_, _) => "byte array",
+            NbtTag::String(_, _) => "string",
+            NbtTag::List(_, _) => "list",
+            NbtTag::Compound(_, _) => "compound",
+            NbtTag::IntArray(_, _) => "int array",
+            NbtTag::LongArray(_, _) => "long array",
+        }.to_string()
+    }
+
+    pub fn get<S: Into<String> + Clone>(&self, name: S) -> Result<NbtTag, NbtParseError> {
         match self {
             NbtTag::Compound(_, tags) => {
                 for tag in tags {
                     if tag.get_name() == name.clone().into() {
-                        return Some(tag.clone());
+                        return Ok(tag.clone());
                     }
                 }
-                None
+                Err(NoSuchValue(name.into()))
             }
-            _ => None
+            _ => Err(TriedGettingFromNonCompound(self.type_name()))
         }
     }
 
-    pub fn get_int<S: Into<String> + Clone>(&self, name: S) -> Option<i32> {
-        if let NbtTag::Int(_, value) = self.get(name)? {
-            Some(value)
+    pub fn get_byte<S: Into<String> + Clone>(&self, name: S) -> Result<i8, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Byte(_, value) = tag {
+            Ok(value)
         } else {
-            None
+            Err(WrongType("byte".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_short<S: Into<String> + Clone>(&self, name: S) -> Result<i16, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Short(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("short".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_int<S: Into<String> + Clone>(&self, name: S) -> Result<i32, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Int(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("int".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_long<S: Into<String> + Clone>(&self, name: S) -> Result<i64, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Long(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("long".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_float<S: Into<String> + Clone>(&self, name: S) -> Result<f32, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Float(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("float".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_double<S: Into<String> + Clone>(&self, name: S) -> Result<f64, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Double(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("double".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_byte_array<S: Into<String> + Clone>(&self, name: S) -> Result<Vec<i8>, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::ByteArray(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("byte array".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_string<S: Into<String> + Clone>(&self, name: S) -> Result<String, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::String(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("string".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_list<S: Into<String> + Clone>(&self, name: S) -> Result<Vec<NbtTag>, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::List(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("list".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_compound<S: Into<String> + Clone>(&self, name: S) -> Result<Vec<NbtTag>, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::Compound(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("compount".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_int_array<S: Into<String> + Clone>(&self, name: S) -> Result<Vec<i32>, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::IntArray(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("int array".to_string(), tag.type_name()))
+        }
+    }
+
+    pub fn get_long_array<S: Into<String> + Clone>(&self, name: S) -> Result<Vec<i64>, NbtParseError> {
+        let tag = self.get(name)?;
+        if let NbtTag::LongArray(_, value) = tag {
+            Ok(value)
+        } else {
+            Err(WrongType("long array".to_string(), tag.type_name()))
         }
     }
 

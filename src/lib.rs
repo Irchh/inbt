@@ -4,6 +4,7 @@ mod parse_error;
 
 pub use types::*;
 pub use parser::*;
+pub use parse_error::*;
 
 #[cfg(test)]
 mod tests {

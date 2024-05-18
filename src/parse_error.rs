@@ -9,4 +9,10 @@ pub enum NbtParseError {
     EndOfData,
     #[error("Unknown NBT type: {0}")]
     UnknownNBT(i8),
+    #[error("No such value: {0}")]
+    NoSuchValue(String),
+    #[error("Expected type {0}, got {1}")]
+    WrongType(String, String),
+    #[error("Tried to get named child of non-compound tag. Actual type is {0}")]
+    TriedGettingFromNonCompound(String),
 }
